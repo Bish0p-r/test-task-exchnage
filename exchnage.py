@@ -1,24 +1,3 @@
-"""
-    Description: For an exchange, get all trading pairs, their latest prices and trading volume for 24 hours
-    Task:
-        Create a class inherited from the BaseExchange class.
-        Write the implementation of the methods and fill in the required fields (marked as "todo")
-    Note:
-        Feel free to add another internal methods.
-        It is important that the example from the main function runs without errors
-    The flow looks like this:
-        1. Request data from the exchange
-        2. We bring the ticker to the general format
-        3. We extract from the ticker properties the last price,
-            the 24-hour trading volume of the base currency
-            and the 24-hour trading volume of the quoted currency.
-            (at least one of the volumes is required)
-        4. Return the structure in the format:
-            {
-                "BTC/USDT": TickerInfo(last=57000, baseVolume=11328, quoteVolume=3456789),
-                "ETH/BTC": TickerInfo(last=4026, baseVolume=4567, quoteVolume=0)
-            }
-"""
 import asyncio
 
 import aiohttp
@@ -109,10 +88,9 @@ class bit(BaseExchange):
         normalized_data = {}
         result = data.get("data", {})
         symbol = self._convert_symbol_to_ccxt(result.get("pair"))
-        last_price = float(result.get("last_price", 0) or 0)
-        base_volume = float(result.get("volume24h", 0) or 0)
-        quote_volume = float(result.get("quote_volume24h", 0) or 0)
-        normalized_data[symbol] = TickerInfo(last=last_price, baseVolume=base_volume, quoteVolume=quote_volume)
+        normalized_data[symbol] = TickerInfo(last=float(result.get("last_price") or 0),
+                                             baseVolume=float(result.get("volume24h") or 0),
+                                             quoteVolume=float(result.get("quote_volume24h") or 0))
         return normalized_data
 
     async def fetch_tickers(self) -> dict[Symbol, TickerInfo]:
@@ -122,7 +100,7 @@ class bit(BaseExchange):
         result = {}
         for symbol in self.markets.values():
             print(f"Fetching: {symbol}")
-            data = await self.fetch_data(self.base_url + 'spot/v1/tickers?pair=' + symbol)
+            data = await self.fetch_data(self.base_url + "spot/v1/tickers?pair=" + symbol)
             result.update(self.normalize_data(data))
         return result
 
@@ -131,7 +109,7 @@ class bit(BaseExchange):
         pairs = data.get("data", [])
         for pair in pairs:
             symbol = pair.get("pair")
-            if pair:
+            if symbol:
                 self.markets[self._convert_symbol_to_ccxt(symbol)] = symbol
 
 
